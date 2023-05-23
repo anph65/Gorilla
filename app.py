@@ -16,7 +16,6 @@ from sklearn.ensemble import ExtraTreesRegressor
 from sklearn.metrics import r2_score, mean_absolute_error
 
 
-
 st.title('Stock Price Predictions')
 st.sidebar.info('Welcome to the Stock Price Prediction App. Choose your options below')
 st.sidebar.info("Created and designed by [Gorilla Group]")
@@ -104,29 +103,6 @@ def dataframe():
     st.dataframe(data.tail(10))
 
 
-
-def predict():
-    model = st.radio('Choose a model', ['LinearRegression', 'RandomForestRegressor', 'ExtraTreesRegressor', 'KNeighborsRegressor', 'XGBoostRegressor'])
-    num = st.number_input('How many days forecast?', value=5)
-    num = int(num)
-    if st.button('Predict'):
-        if model == 'LinearRegression':
-            engine = LinearRegression()
-            model_engine(engine, num)
-        elif model == 'RandomForestRegressor':
-            engine = RandomForestRegressor()
-            model_engine(engine, num)
-        elif model == 'ExtraTreesRegressor':
-            engine = ExtraTreesRegressor()
-            model_engine(engine, num)
-        elif model == 'KNeighborsRegressor':
-            engine = KNeighborsRegressor()
-            model_engine(engine, num)
-        else:
-            engine = XGBRegressor()
-            model_engine(engine, num)
-
-
 def model_engine(model, num):
     # getting only the closing price
     df = data[['Close']]
@@ -154,10 +130,48 @@ def model_engine(model, num):
     # predicting stock price based on the number of days
     forecast_pred = model.predict(x_forecast)
     day = 1
+    predictions = []
     for i in forecast_pred:
-        st.text(f'Day {day}: {i}')
+        predictions.append(i)
         day += 1
+
+    # Create DataFrame for predicted prices
+    forecast_dates = pd.date_range(end=end_date, periods=num+1)[1:]
+    predicted_data = pd.DataFrame({'Date': forecast_dates, 'Predicted Price': predictions})
+
+    return predicted_data
+
+
+def predict():
+    model = st.radio('Choose a model', ['LinearRegression', 'RandomForestRegressor', 'ExtraTreesRegressor', 'KNeighborsRegressor', 'XGBoostRegressor'])
+    num = st.number_input('How many days forecast?', value=5)
+    num = int(num)
+    if st.button('Predict'):
+        if model == 'LinearRegression':
+            engine = LinearRegression()
+            predicted_data = model_engine(engine, num)
+        elif model == 'RandomForestRegressor':
+            engine = RandomForestRegressor()
+            predicted_data = model_engine(engine, num)
+        elif model == 'ExtraTreesRegressor':
+            engine = ExtraTreesRegressor()
+            predicted_data = model_engine(engine, num)
+        elif model == 'KNeighborsRegressor':
+            engine = KNeighborsRegressor()
+            predicted_data = model_engine(engine, num)
+        else:
+            engine = XGBRegressor()
+            predicted_data = model_engine(engine, num)
+
+        # Display metrics
+        st.text(f'r2_score: {r2_score(y_test, preds)} \
+                \nMAE: {mean_absolute_error(y_test, preds)}')
+
+        # Display predicted stock prices
+        st.header('Predicted Stock Prices')
+        st.line_chart(predicted_data.set_index('Date'))
 
 
 if __name__ == '__main__':
     main()
+       
